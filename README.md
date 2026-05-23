@@ -293,10 +293,3 @@ docker-compose up -d
 - Verify JWT secret key is consistent
 - Ensure token is included in request headers
 
-## 📄 License
-
-This project is part of an interview portfolio and is provided as-is.
-
-## 📧 Questions?
-
-For questions about this project, refer to the interview explanation document in `docs/INTERVIEW_EXPLANATION.md`.
