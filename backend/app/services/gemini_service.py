@@ -1,6 +1,6 @@
 """
 LLM Generation service for RAG-based answer generation.
-Supports Google Gemini, Groq (Llama), and Ollama (Local / Offline) models.
+Supports Groq (Llama) and Google Gemini model providers.
 """
 
 import google.generativeai as genai
@@ -13,12 +13,10 @@ class GeminiService:
     def __init__(self):
         self.settings = get_settings()
         self.provider = self.settings.LLM_PROVIDER.lower()
-        self.api_key = self.settings.GEMINI_API_KEY
+        self.api_key = self.settings.GEMINI_API_KEY.strip() if self.settings.GEMINI_API_KEY else ""
         self.model_name = self.settings.GEMINI_MODEL
-        self.groq_api_key = self.settings.GROQ_API_KEY
+        self.groq_api_key = self.settings.GROQ_API_KEY.strip() if self.settings.GROQ_API_KEY else ""
         self.groq_model = self.settings.GROQ_MODEL
-        self.ollama_url = self.settings.OLLAMA_URL
-        self.ollama_model = self.settings.OLLAMA_MODEL
 
         # Configure Gemini in background if key is present
         if self.api_key:
@@ -31,10 +29,58 @@ class GeminiService:
         else:
             self.client = None
 
+    def generate_chat_response(self, system_prompt: str, user_prompt: str) -> str:
+        """Helper to run any system+user prompt on the active LLM provider (Groq/Gemini)."""
+        if self.provider == "groq":
+            if not self.groq_api_key:
+                raise ValueError("Groq API key not configured")
+            try:
+                headers = {
+                    "Authorization": f"Bearer {self.groq_api_key}",
+                    "Content-Type": "application/json",
+                }
+                payload = {
+                    "model": self.groq_model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "temperature": 0.2,
+                }
+                with httpx.Client(timeout=30.0) as client:
+                    response = client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers=headers,
+                        json=payload,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    return data["choices"][0]["message"]["content"].strip()
+            except Exception as exc:
+                logger.error(f"Groq Agent error: {str(exc)}")
+                raise
+        else:
+            if not self.client:
+                raise ValueError("Gemini is not configured")
+            try:
+                response = self.client.generate_content(
+                    [system_prompt, "\n\n", user_prompt],
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.2,
+                        top_p=0.95,
+                        top_k=40,
+                        max_output_tokens=1024,
+                    ),
+                )
+                return response.text.strip()
+            except Exception as exc:
+                logger.error(f"Gemini Agent error: {str(exc)}")
+                raise
+
     def generate_answer(self, question: str, context: str) -> str:
         """
         Generate an answer to a question based on provided document context.
-        Dynamically branches to Ollama (offline), Groq, or Gemini based on config.
+        Uses Groq if configured, otherwise falls back to Gemini.
         """
         if not context or not context.strip():
             raise ValueError("No document context provided for answer generation.")
@@ -63,38 +109,8 @@ User Question:
 
 Please provide an answer based only on the context above."""
 
-        # --- 1. LOCAL OFFLINE OLLAMA PROVIDER ---
-        if self.provider == "ollama":
-            logger.info(f"Generating answer OFFLINE via Ollama model: {self.ollama_model}")
-            try:
-                payload = {
-                    "model": self.ollama_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "stream": False,
-                    "options": {
-                        "temperature": 0.2
-                    }
-                }
-                with httpx.Client(timeout=45.0) as client:
-                    response = client.post(
-                        f"{self.ollama_url}/api/chat",
-                        json=payload,
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    answer = data["message"]["content"]
-                    return answer.strip()
-            except Exception as exc:
-                logger.error(f"Offline Ollama error: {str(exc)}")
-                raise ValueError(
-                    f"Local offline generation failed. Please verify Ollama is running at {self.ollama_url}: {str(exc)}"
-                ) from exc
-
-        # --- 2. HIGH-SPEED GROQ PROVIDER ---
-        elif self.provider == "groq":
+        # --- 1. HIGH-SPEED GROQ PROVIDER ---
+        if self.provider == "groq":
             if not self.groq_api_key:
                 raise ValueError("Groq API key is not configured. Please set GROQ_API_KEY in environment.")
 
@@ -126,7 +142,7 @@ Please provide an answer based only on the context above."""
                 logger.error(f"Groq API error: {str(exc)}")
                 raise ValueError(f"Groq generation failed: {str(exc)}") from exc
 
-        # --- 3. GOOGLE GEMINI PROVIDER (DEFAULT) ---
+        # --- 2. GOOGLE GEMINI PROVIDER (FALLBACK) ---
         else:
             if not self.client:
                 raise ValueError(

@@ -1,5 +1,9 @@
 from functools import lru_cache
 from typing import List
+from dotenv import load_dotenv
+
+# Force load active .env and override any parent system environment variables
+load_dotenv(override=True)
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,8 +33,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "storage/documents"
     MAX_UPLOAD_SIZE_MB: int = 10
 
-    # LLM Provider Configuration ("gemini", "groq", "ollama")
-    LLM_PROVIDER: str = "gemini"
+    # LLM Provider Configuration ("groq", "gemini")
+    LLM_PROVIDER: str = "groq"
 
     # Gemini API configuration
     GEMINI_API_KEY: str = ""
@@ -39,10 +43,6 @@ class Settings(BaseSettings):
     # Groq API configuration
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
-
-    # Offline Ollama Configuration
-    OLLAMA_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3"
 
     model_config = SettingsConfigDict(
         env_file=".env",

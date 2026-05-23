@@ -315,7 +315,7 @@ export default function ChatPage() {
                         ? "bg-gradient-to-br from-indigo-950/70 to-slate-900 border-indigo-500/20 text-indigo-100"
                         : "bg-slate-900/60 border-slate-800/80 text-slate-100 backdrop-blur-xs"
                     }`}>
-                      {msg.content}
+                      {isUser ? msg.content : formatMessageContent(msg.content)}
                     </div>
                   </div>
 
@@ -439,6 +439,360 @@ function CollapsibleSources({ sources }: { sources: SourceItem[] }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+interface MarkdownBlock {
+  type: 'heading' | 'code' | 'list' | 'blockquote' | 'table' | 'paragraph';
+  depth?: number;
+  language?: string;
+  items?: string[];
+  ordered?: boolean;
+  headers?: string[];
+  rows?: string[][];
+  text?: string;
+}
+
+function parseMarkdown(content: string): MarkdownBlock[] {
+  const lines = content.split('\n');
+  const blocks: MarkdownBlock[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // 1. Code blocks
+    if (line.trim().startsWith('```')) {
+      const lang = line.trim().substring(3).trim();
+      let code = '';
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith('```')) {
+        code += lines[i] + '\n';
+        i++;
+      }
+      blocks.push({ type: 'code', language: lang || 'text', text: code.trim() });
+      i++; // skip closing ```
+      continue;
+    }
+
+    // 2. Blockquotes
+    if (line.trim().startsWith('>')) {
+      let quoteText = '';
+      while (i < lines.length && lines[i].trim().startsWith('>')) {
+        const cleanQuote = lines[i].trim().substring(1).trim();
+        quoteText += (quoteText ? '\n' : '') + cleanQuote;
+        i++;
+      }
+      blocks.push({ type: 'blockquote', text: quoteText });
+      continue;
+    }
+
+    // 3. Lists
+    const isUnordered = line.trim().startsWith('- ') || line.trim().startsWith('* ');
+    const isOrdered = /^\d+\.\s/.test(line.trim());
+    if (isUnordered || isOrdered) {
+      const items: string[] = [];
+      const ordered = isOrdered;
+      
+      while (i < lines.length) {
+        const currentLine = lines[i].trim();
+        const currentIsUnordered = currentLine.startsWith('- ') || currentLine.startsWith('* ');
+        const currentIsOrdered = /^\d+\.\s/.test(currentLine);
+        
+        if (ordered && currentIsOrdered) {
+          const dotIdx = currentLine.indexOf('.');
+          items.push(currentLine.substring(dotIdx + 1).trim());
+          i++;
+        } else if (!ordered && currentIsUnordered) {
+          items.push(currentLine.substring(2).trim());
+          i++;
+        } else {
+          break;
+        }
+      }
+      blocks.push({ type: 'list', ordered, items });
+      continue;
+    }
+
+    // 4. Tables
+    if (line.trim().startsWith('|')) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+      if (tableLines.length >= 2) {
+        const headers = tableLines[0]
+          .split('|')
+          .map(s => s.trim())
+          .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+        const separatorLine = tableLines[1];
+        const isSeparator = separatorLine.includes('-') && separatorLine.includes('|');
+        
+        const startRowIdx = isSeparator ? 2 : 1;
+        const rows: string[][] = [];
+        for (let r = startRowIdx; r < tableLines.length; r++) {
+          const cols = tableLines[r]
+            .split('|')
+            .map(s => s.trim())
+            .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+          rows.push(cols);
+        }
+        blocks.push({ type: 'table', headers, rows });
+        continue;
+      } else {
+        blocks.push({ type: 'paragraph', text: line });
+        i++;
+        continue;
+      }
+    }
+
+    // 5. Headings
+    if (line.startsWith('# ')) {
+      blocks.push({ type: 'heading', depth: 1, text: line.substring(2) });
+      i++;
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      blocks.push({ type: 'heading', depth: 2, text: line.substring(3) });
+      i++;
+      continue;
+    }
+    if (line.startsWith('### ')) {
+      blocks.push({ type: 'heading', depth: 3, text: line.substring(4) });
+      i++;
+      continue;
+    }
+
+    // 6. Paragraph spacing (empty lines)
+    if (line.trim() === '') {
+      blocks.push({ type: 'paragraph', text: '' });
+      i++;
+      continue;
+    }
+
+    // Default: paragraph line
+    blocks.push({ type: 'paragraph', text: line });
+    i++;
+  }
+
+  return blocks;
+}
+
+function formatInlineContent(text: string): React.ReactNode {
+  if (!text) return null;
+
+  const elements: React.ReactNode[] = [];
+  let index = 0;
+  
+  while (index < text.length) {
+    const remaining = text.substring(index);
+    
+    // 1. Inline code: `code`
+    if (remaining.startsWith('`')) {
+      const closeIdx = remaining.indexOf('`', 1);
+      if (closeIdx !== -1) {
+        const codeText = remaining.substring(1, closeIdx);
+        elements.push(
+          <code key={`code-${index}`} className="font-mono text-xs px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-violet-350 font-semibold mx-0.5 select-all">
+            {codeText}
+          </code>
+        );
+        index += closeIdx + 1;
+        continue;
+      }
+    }
+    
+    // 2. Bold: **bold**
+    if (remaining.startsWith('**')) {
+      const closeIdx = remaining.indexOf('**', 2);
+      if (closeIdx !== -1) {
+        const boldText = remaining.substring(2, closeIdx);
+        elements.push(
+          <strong key={`bold-${index}`} className="font-extrabold text-violet-200 bg-violet-500/10 px-1.5 py-0.5 rounded border border-violet-500/20 shadow-xs">
+            {boldText}
+          </strong>
+        );
+        index += closeIdx + 2;
+        continue;
+      }
+    }
+    
+    // 3. Italic: *italic*
+    if (remaining.startsWith('*')) {
+      const closeIdx = remaining.indexOf('*', 1);
+      if (closeIdx !== -1) {
+        const italicText = remaining.substring(1, closeIdx);
+        elements.push(
+          <em key={`italic-${index}`} className="italic text-slate-350 font-medium">
+            {italicText}
+          </em>
+        );
+        index += closeIdx + 1;
+        continue;
+      }
+    }
+
+    // 4. Italic: _italic_
+    if (remaining.startsWith('_')) {
+      const closeIdx = remaining.indexOf('_', 1);
+      if (closeIdx !== -1) {
+        const italicText = remaining.substring(1, closeIdx);
+        elements.push(
+          <em key={`italic-under-${index}`} className="italic text-slate-350 font-medium">
+            {italicText}
+          </em>
+        );
+        index += closeIdx + 1;
+        continue;
+      }
+    }
+    
+    // Plain text scan
+    let nextSpecial = remaining.length;
+    const specialTokens = ['`', '**', '*', '_'];
+    for (const token of specialTokens) {
+      const idx = remaining.indexOf(token);
+      if (idx !== -1 && idx > 0 && idx < nextSpecial) {
+        nextSpecial = idx;
+      }
+    }
+    
+    elements.push(remaining.substring(0, nextSpecial));
+    index += nextSpecial;
+  }
+  
+  return <>{elements}</>;
+}
+
+// Custom, highly-performant zero-dependency Markdown formatter matching the HSL glassmorphism design tokens
+function formatMessageContent(content: string) {
+  if (!content) return "";
+  
+  const blocks = parseMarkdown(content);
+  
+  return (
+    <div className="space-y-3.5 text-xs sm:text-sm leading-relaxed text-slate-200">
+      {blocks.map((block, idx) => {
+        switch (block.type) {
+          case 'heading':
+            if (block.depth === 1) {
+              return (
+                <h1 key={idx} className="text-base sm:text-lg font-black text-white mt-4 mb-2 tracking-tight">
+                  {formatInlineContent(block.text || '')}
+                </h1>
+              );
+            }
+            if (block.depth === 2) {
+              return (
+                <h2 key={idx} className="text-sm sm:text-base font-extrabold text-white mt-4 mb-2 border-b border-slate-800/60 pb-1.5 tracking-tight flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-sm bg-indigo-500/80 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></span>
+                  {formatInlineContent(block.text || '')}
+                </h2>
+              );
+            }
+            return (
+              <h3 key={idx} className="text-xs sm:text-sm font-bold text-violet-400 mt-3 mb-1.5 flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-400/80 shadow-[0_0_6px_rgba(139,92,246,0.5)]"></span>
+                {formatInlineContent(block.text || '')}
+              </h3>
+            );
+            
+          case 'code':
+            return (
+              <div key={idx} className="my-3.5 overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/80 shadow-md">
+                <div className="flex items-center justify-between bg-slate-900/60 px-4 py-2 text-[10px] font-bold text-slate-400 font-mono tracking-wider border-b border-slate-850 uppercase shrink-0">
+                  <span>{block.language}</span>
+                  <button 
+                    onClick={() => {
+                      if (block.text) navigator.clipboard.writeText(block.text);
+                    }}
+                    className="hover:text-violet-400 transition-colors duration-150 flex items-center gap-1 cursor-pointer active:scale-95 text-[10px]"
+                  >
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    COPY CODE
+                  </button>
+                </div>
+                <pre className="p-4 overflow-x-auto text-[11px] font-mono text-slate-350 leading-normal custom-scrollbar bg-slate-950/30 select-all">
+                  <code>{block.text}</code>
+                </pre>
+              </div>
+            );
+            
+          case 'list':
+            if (block.ordered) {
+              return (
+                <ol key={idx} className="list-decimal ml-6 space-y-1.5 my-2 text-slate-300">
+                  {block.items?.map((item, itemIdx) => (
+                    <li key={itemIdx} className="leading-relaxed pl-1">
+                      {formatInlineContent(item)}
+                    </li>
+                  ))}
+                </ol>
+              );
+            }
+            return (
+              <ul key={idx} className="list-disc ml-6 space-y-1.5 my-2 text-slate-300">
+                {block.items?.map((item, itemIdx) => (
+                  <li key={itemIdx} className="leading-relaxed pl-1">
+                    {formatInlineContent(item)}
+                  </li>
+                ))}
+              </ul>
+            );
+            
+          case 'blockquote':
+            return (
+              <blockquote key={idx} className="my-3.5 border-l-4 border-violet-500/80 bg-violet-950/10 px-4 py-3 rounded-r-xl text-slate-350 italic shadow-sm">
+                {formatInlineContent(block.text || '')}
+              </blockquote>
+            );
+            
+          case 'table':
+            return (
+              <div key={idx} className="my-3.5 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/40 shadow-sm max-w-full custom-scrollbar">
+                <table className="min-w-full divide-y divide-slate-800/80 text-[11px] sm:text-xs text-left">
+                  <thead className="bg-slate-900/60 font-bold text-slate-300 tracking-wider">
+                    <tr>
+                      {block.headers?.map((header, hIdx) => (
+                        <th key={hIdx} className="px-3 py-2 font-bold border-r border-slate-850/55 last:border-r-0">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-850/40 bg-slate-950/10">
+                    {block.rows?.map((row, rIdx) => (
+                      <tr key={rIdx} className="hover:bg-slate-900/20 transition-colors">
+                        {row.map((cell, cIdx) => (
+                          <td key={cIdx} className="px-3 py-1.5 text-slate-350 border-r border-slate-850/30 last:border-r-0 leading-normal">
+                            {formatInlineContent(cell)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+            
+          case 'paragraph':
+            if (block.text === '') {
+              return <div key={idx} className="h-1.5"></div>;
+            }
+            return (
+              <p key={idx} className="text-slate-200 leading-relaxed tracking-wide">
+                {formatInlineContent(block.text || '')}
+              </p>
+            );
+            
+          default:
+            return null;
+        }
+      })}
     </div>
   );
 }

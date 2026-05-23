@@ -15,16 +15,14 @@ from app.services.chat_service import chat_service
 db = SessionLocal()
 
 try:
-    # Get first user and project to run diagnostic
-    user = db.query(User).first()
-    if not user:
-        print("❌ Error: No user found in database.")
+    project = db.query(Project).filter(Project.is_deleted.is_(False)).order_by(Project.created_at.desc()).first()
+    if not project:
+        print("❌ Error: No active projects found in database.")
         sys.exit(1)
         
-    project_id = UUID("8ea4a62f-5a48-4d35-a0b9-ca15f525637f")
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        print("❌ Error: Targeted project 8ea4a62f-5a48-4d35-a0b9-ca15f525637f not found in database.")
+    user = db.query(User).filter(User.id == project.owner_id).first()
+    if not user:
+        print("❌ Error: No owner user found for active project.")
         sys.exit(1)
 
     print(f"Loaded Diagnostic Context:")
