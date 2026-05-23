@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: evalguard_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: evalguard_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - evalguard_postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: evalguard_backend
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+volumes:
+  evalguard_postgres_data:

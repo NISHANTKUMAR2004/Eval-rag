@@ -1,0 +1,80 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.routes.projects import router as projects_router
+from app.api.routes.auth import router as auth_router
+from app.api.routes.health import router as health_router
+from app.core.config import get_settings
+from app.core.exceptions import register_exception_handlers
+from app.core.logging import logger, setup_logging
+from app.api.routes.documents import router as documents_router
+from app.api.routes.chunks import router as chunks_router
+from app.api.routes.datasets import router as datasets_router
+from app.api.routes.test_cases import router as test_cases_router
+from app.api.routes.rag_runs import router as rag_runs_router
+from app.api.routes.evaluations import router as evaluations_router
+from app.api.routes.batch_evaluations import router as batch_evaluations_router
+from app.api.routes.dashboard import router as dashboard_router, global_stats_router as dashboard_stats_router
+from app.api.routes.chat import router as chat_router
+
+settings = get_settings()
+
+setup_logging()
+
+
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title=settings.APP_NAME,
+        description="EvalGuard AI - Multi-Agent RAG Evaluation Platform Backend API",
+        version="0.2.0",
+        debug=settings.DEBUG,
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5174",
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    register_exception_handlers(app)
+
+    app.include_router(health_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(dashboard_stats_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(projects_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(documents_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(chunks_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(datasets_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(test_cases_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(rag_runs_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(evaluations_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(batch_evaluations_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(dashboard_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(chat_router, prefix=settings.API_V1_PREFIX)
+
+    @app.get("/")
+    def root():
+        return {
+            "success": True,
+            "message": "Welcome to EvalGuard AI Backend",
+            "docs": "/docs",
+            "health": f"{settings.API_V1_PREFIX}/health",
+            "version": "0.10.0",
+        }
+
+    logger.info("EvalGuard AI backend application created successfully")
+
+    return app
+
+
+app = create_app()

@@ -1,0 +1,2 @@
+This is a sample document for EvalGuard AI ingestion testing.
+It will be used later for chunking and RAG evaluation.
