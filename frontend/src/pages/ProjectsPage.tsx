@@ -115,9 +115,16 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="space-y-8 animate-slide-up">
+    <div className="space-y-8 animate-slide-up relative">
+      {/* Premium Ambient Light Glows */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-12 left-1/4 h-80 w-80 rounded-full bg-violet-600/10 blur-[130px] animate-float"></div>
+        <div className="absolute top-1/2 right-12 h-96 w-96 rounded-full bg-indigo-600/10 blur-[150px] animate-float" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute bottom-10 left-10 h-72 w-72 rounded-full bg-cyan-500/5 blur-[120px] animate-float" style={{ animationDelay: '1.5s' }}></div>
+      </div>
+
       {/* Page Header */}
-      <div>
+      <div className="relative z-10">
         <h1 className="text-3xl font-extrabold tracking-tight text-white">
           Evaluation <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-indigo-400">Projects</span>
         </h1>
