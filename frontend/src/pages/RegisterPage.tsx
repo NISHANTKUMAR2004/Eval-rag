@@ -25,8 +25,9 @@ export default function RegisterPage() {
       });
 
       navigate("/login");
-    } catch (err) {
-      setError("Registration failed. User may already exist.");
+    } catch (err: any) {
+      const serverMessage = err.response?.data?.detail || err.message || "Registration failed.";
+      setError(typeof serverMessage === 'string' ? serverMessage : JSON.stringify(serverMessage));
     } finally {
       setLoading(false);
     }

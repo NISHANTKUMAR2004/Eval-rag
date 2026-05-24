@@ -27,8 +27,9 @@ export default function LoginPage() {
 
       localStorage.setItem("evalguard_token", token);
       navigate("/dashboard");
-    } catch (err) {
-      setError("Login failed. Check email/password or backend server.");
+    } catch (err: any) {
+      const serverMessage = err.response?.data?.detail || err.message || "Login failed.";
+      setError(typeof serverMessage === 'string' ? serverMessage : JSON.stringify(serverMessage));
     } finally {
       setLoading(false);
     }
