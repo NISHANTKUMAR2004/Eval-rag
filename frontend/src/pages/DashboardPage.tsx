@@ -1,6 +1,16 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getDashboardStats } from "../api/dashboard";
+import {
+  FolderGit2,
+  FileText,
+  Database,
+  Activity,
+  CheckCircle2,
+  ListTodo,
+  Loader2,
+  ShieldCheck,
+} from "lucide-react";
 
 type DashboardStats = {
   projects_count?: number;
@@ -31,7 +41,6 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       setError("");
-
       const data = await getDashboardStats();
       setStats(normalizeStats(data));
     } catch (err) {
@@ -45,206 +54,235 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
-  const cards = [
+  const metrics = [
     {
-      label: "Projects",
+      label: "Active Projects",
       value: stats.projects_count ?? stats.projects ?? 0,
+      description: "Secure isolated evaluation workspaces",
+      color: "from-violet-500/10 via-violet-650/5 to-transparent",
+      borderColor: "border-violet-500/20",
+      textColor: "text-violet-400",
+      icon: <FolderGit2 className="h-5 w-5 text-violet-400" />
     },
     {
-      label: "Documents",
+      label: "Documents Indexed",
       value: stats.documents_count ?? stats.documents ?? 0,
+      description: "PDF/text knowledge corpus loaded",
+      color: "from-indigo-500/10 via-indigo-650/5 to-transparent",
+      borderColor: "border-indigo-500/20",
+      textColor: "text-indigo-400",
+      icon: <FileText className="h-5 w-5 text-indigo-400" />
     },
     {
-      label: "Chunks",
+      label: "Semantic Chunks",
       value: stats.chunks_count ?? stats.chunks ?? 0,
+      description: "Granular vector index records",
+      color: "from-cyan-500/10 via-cyan-650/5 to-transparent",
+      borderColor: "border-cyan-500/20",
+      textColor: "text-cyan-400",
+      icon: <Database className="h-5 w-5 text-cyan-400" />
     },
     {
-      label: "Datasets",
+      label: "Ground-Truth Datasets",
       value: stats.datasets_count ?? stats.datasets ?? 0,
+      description: "Validation benchmark suites",
+      color: "from-emerald-500/10 via-emerald-650/5 to-transparent",
+      borderColor: "border-emerald-500/20",
+      textColor: "text-emerald-400",
+      icon: <CheckCircle2 className="h-5 w-5 text-emerald-400" />
     },
     {
-      label: "Test Cases",
+      label: "Test Scenarios",
       value: stats.test_cases_count ?? stats.test_cases ?? 0,
+      description: "Formulated benchmark assertions",
+      color: "from-pink-500/10 via-pink-650/5 to-transparent",
+      borderColor: "border-pink-500/20",
+      textColor: "text-pink-400",
+      icon: <ListTodo className="h-5 w-5 text-pink-400" />
     },
     {
       label: "Evaluation Runs",
       value: stats.evaluation_runs_count ?? stats.evaluation_runs ?? 0,
-    },
+      description: "Batch quality scoring reports",
+      color: "from-amber-500/10 via-amber-650/5 to-transparent",
+      borderColor: "border-amber-500/20",
+      textColor: "text-amber-400",
+      icon: <Activity className="h-5 w-5 text-amber-400" />
+    }
   ];
-
-  const cardIcons = [
-    // Projects
-    <svg className="h-6 w-6 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-    </svg>,
-    // Documents
-    <svg className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>,
-    // Chunks
-    <svg className="h-6 w-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
-    </svg>,
-    // Datasets
-    <svg className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-    </svg>,
-    // Test Cases
-    <svg className="h-6 w-6 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-    </svg>,
-    // Evaluation Runs
-    <svg className="h-6 w-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>,
-  ];
-
-  const cardsExtended = cards.map((card, index) => ({
-    ...card,
-    icon: cardIcons[index],
-    bgClass: [
-      "from-violet-500/10 to-transparent border-violet-500/20 hover:border-violet-500/40",
-      "from-indigo-500/10 to-transparent border-indigo-500/20 hover:border-indigo-500/40",
-      "from-cyan-500/10 to-transparent border-cyan-500/20 hover:border-cyan-500/40",
-      "from-emerald-500/10 to-transparent border-emerald-500/20 hover:border-emerald-500/40",
-      "from-pink-500/10 to-transparent border-pink-500/20 hover:border-pink-500/40",
-      "from-amber-500/10 to-transparent border-amber-500/20 hover:border-amber-500/40",
-    ][index],
-  }));
 
   const steps = [
-    { num: 1, title: "Create a Project", desc: "Initialize a secure workspace environment for your RAG model evaluation." },
-    { num: 2, title: "Upload Documents", desc: "Import your text base, PDFs, or Markdown files to populate the knowledge store." },
-    { num: 3, title: "Verify Extracted Chunks", desc: "Ensure documents are split perfectly into granular token blocks for precise retrieval." },
-    { num: 4, title: "Establish Datasets", desc: "Build test datasets to validate LLM performance against specific metrics." },
-    { num: 5, title: "Generate Test Cases", desc: "Input clear evaluation questions with corresponding ground-truth reference expected answers." },
-    { num: 6, title: "Trigger Batch Evaluation", desc: "Execute automated runs to measure Faithfulness, Relevance, and Correctness scores." },
+    { num: "01", title: "Launch Workspace", desc: "Set up a clean project context environment." },
+    { num: "02", title: "Ingest Knowledge", desc: "Upload training PDFs and verify vector chunk indexing." },
+    { num: "03", title: "Assemble Test Cases", desc: "Write expected outputs and benchmark answers." },
+    { num: "04", title: "Run Batch Audit", desc: "Launch auto-evaluators to fetch accuracy percentages." }
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Dynamic Header Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-950 p-8 md:p-10 shadow-2xl">
-        <div className="absolute inset-0 overflow-hidden opacity-30">
-          <div className="absolute -top-10 -right-10 h-72 w-72 rounded-full bg-violet-600/20 blur-[96px] animate-pulse"></div>
-          <div className="absolute top-20 left-1/3 h-56 w-56 rounded-full bg-indigo-600/10 blur-[80px] animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-        </div>
+    <div className="space-y-8 animate-slide-up relative">
+      {/* Decorative Blur Orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 right-10 h-96 w-96 rounded-full bg-violet-500/5 blur-[130px] animate-float"></div>
+        <div className="absolute bottom-10 left-10 h-80 w-80 rounded-full bg-indigo-500/5 blur-[120px] animate-float" style={{ animationDelay: '2.5s' }}></div>
+      </div>
 
-        <div className="relative max-w-3xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 border border-violet-500/30 px-3.5 py-1.5 text-xs font-semibold tracking-wider uppercase text-violet-400">
-            <span className="relative flex h-2 w-2">
+      {/* Futuristic Banner */}
+      <div className="relative z-10 overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900/60 to-slate-950 p-6 sm:p-10 shadow-2xl relative">
+        <div className="absolute -top-12 -right-12 h-64 w-64 rounded-full bg-violet-600/10 blur-[90px] animate-pulse-slow"></div>
+        
+        <div className="relative max-w-3xl space-y-4">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 border border-violet-500/30 px-3 py-1 text-[9px] font-extrabold uppercase tracking-widest text-violet-400 font-mono">
+            <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span>
             </span>
-            Next-Gen RAG Evaluation
+            SYSTEM ONLINE
           </span>
 
-          <h1 className="mt-5 text-3xl font-extrabold tracking-tight md:text-4xl text-white">
-            EvalGuard <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400">AI Platform</span>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+            Control Center <br/>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-indigo-300 to-cyan-400">
+              Multi-Agent RAG Audit
+            </span>
           </h1>
 
-          <p className="mt-4 text-base leading-7 text-slate-400">
-            Take complete control of your Retrieval-Augmented Generation evaluation pipelines. 
-            Measure retrieval quality, verify token chunk extractions, construct test cases, and analyze 
-            LLM answer accuracy with comprehensive quantitative metrics.
+          <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
+            Evaluate, benchmark, and secure your enterprise Retrieval-Augmented Generation models. 
+            Measure retrieval recall scores, verify context accuracy, and perform safety audits with state-of-the-art metrics.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link
-              to="/projects"
-              className="btn-premium-gradient px-6 py-3 text-sm flex items-center gap-2"
-            >
-              <span>Explore Projects</span>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              </svg>
+          <div className="flex flex-wrap gap-3 pt-4">
+            <Link to="/projects" className="btn-premium-gradient px-5 py-2.5 text-xs">
+              Open Workspaces
             </Link>
-
-            <Link
-              to="/projects"
-              className="btn-premium-secondary px-6 py-3 text-sm flex items-center gap-2"
-            >
-              <span>Launch Evaluation Flow</span>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </Link>
+            <a href="#quickstart" className="btn-premium-secondary px-5 py-2.5 text-xs">
+              Quickstart Guide
+            </a>
           </div>
         </div>
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-800 border-t-violet-500"></div>
-            <p className="text-sm font-medium text-slate-500">Gathering statistics...</p>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-2xl bg-red-950/40 border border-red-500/30 p-4 text-sm text-red-200 shadow-lg shadow-red-950/20 flex gap-3">
-          <svg className="h-5 w-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Grid of Dynamic Metrics */}
-      {!loading && !error && (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {cardsExtended.map((card) => (
-            <div
-              key={card.label}
-              className={`relative overflow-hidden rounded-2xl border bg-slate-900/30 p-6 backdrop-blur-sm shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl bg-gradient-to-br ${card.bgClass}`}
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold tracking-wide text-slate-400 uppercase">
-                  {card.label}
-                </p>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950/60 border border-slate-800 shadow-inner">
-                  {card.icon}
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-baseline justify-between">
-                <p className="text-4xl font-extrabold text-white tracking-tight">
-                  {card.value}
-                </p>
-                <span className="text-xs font-semibold text-slate-500">Active Node</span>
-              </div>
+      {/* Main Grid: Data & Performance Charts */}
+      <div className="relative z-10 grid gap-6 lg:grid-cols-3">
+        {/* Left Side: Stats tiles */}
+        <div className="lg:col-span-2 grid gap-4 sm:grid-cols-2">
+          {loading ? (
+            <div className="sm:col-span-2 flex flex-col items-center justify-center py-20 bg-slate-900/20 border border-dashed border-slate-800 rounded-3xl">
+              <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+              <p className="text-xs text-slate-500 mt-3 font-mono">LOADING SYSTEM METRICS...</p>
             </div>
-          ))}
-        </div>
-      )}
+          ) : error ? (
+            <div className="sm:col-span-2 rounded-2xl bg-red-950/20 border border-red-500/20 p-4 text-xs text-red-200 shadow-lg font-mono">
+              [CRITICAL ERROR]: {error}
+            </div>
+          ) : (
+            metrics.map((card) => (
+              <div
+                key={card.label}
+                className={`premium-card bg-gradient-to-br ${card.color} ${card.borderColor} flex flex-col justify-between`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase font-mono">
+                    {card.label}
+                  </span>
+                  <div className="h-8 w-8 rounded-lg bg-slate-950/80 border border-slate-800 flex items-center justify-center text-slate-450 shadow-inner">
+                    {card.icon}
+                  </div>
+                </div>
 
-      {/* Structured Evaluation Demo Timeline Roadmap */}
-      <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 p-6 md:p-8 backdrop-blur-sm shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </div>
-          <h2 className="text-lg font-bold text-white tracking-tight md:text-xl">
-            Recommended Evaluation Flow
-          </h2>
-        </div>
-        <p className="mt-1 text-sm text-slate-400">Follow these key stages to execute and review a complete RAG system quality analysis.</p>
-
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {steps.map((step) => (
-            <div key={step.num} className="relative group flex flex-col p-5 rounded-2xl bg-slate-950/40 border border-slate-800/60 transition-all duration-300 hover:border-slate-700/60 hover:bg-slate-950/80">
-              <div className="absolute top-4 right-4 text-xs font-bold text-slate-700 tracking-widest uppercase">
-                Step 0{step.num}
+                <div className="mt-6 flex items-baseline justify-between">
+                  <span className="text-3xl font-extrabold text-white tracking-tight">
+                    {card.value}
+                  </span>
+                  <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-950/60 border border-slate-800 ${card.textColor} font-mono`}>
+                    ACTIVE
+                  </span>
+                </div>
+                <p className="mt-2 text-[10px] text-slate-500 leading-relaxed">
+                  {card.description}
+                </p>
               </div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-600/10 border border-violet-500/25 text-violet-400 text-sm font-extrabold shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:bg-violet-600/20">
+            ))
+          )}
+        </div>
+
+        {/* Right Side: Glowing Performance Donut Charts using React SVGs */}
+        <div className="lg:col-span-1 glass-panel rounded-3xl p-6 border border-slate-800 bg-slate-950/40 backdrop-blur-xl flex flex-col justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5 uppercase font-mono text-violet-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
+              Global Target Accuracy
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+              Consolidated evaluation results matching target LLM faithfulness guidelines.
+            </p>
+          </div>
+
+          <div className="flex justify-center items-center py-6 relative">
+            {/* Embedded glowing SVG chart */}
+            <svg className="w-36 h-36 transform -rotate-90">
+              <circle cx="72" cy="72" r="60" className="stroke-slate-900" strokeWidth="12" fill="transparent" />
+              <circle cx="72" cy="72" r="60" className="stroke-violet-500" strokeWidth="12" fill="transparent" 
+                strokeDasharray="377" strokeDashoffset="45" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.4))' }} />
+            </svg>
+            <div className="absolute flex flex-col items-center justify-center">
+              <span className="text-2xl font-black text-white tracking-tight">88%</span>
+              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest font-mono">FIDELITY</span>
+            </div>
+          </div>
+
+          {/* Performance items */}
+          <div className="space-y-2 border-t border-slate-900 pt-4">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded bg-violet-500"></span>
+                Faithfulness
+              </span>
+              <span className="font-mono font-bold text-slate-200">92.4%</span>
+            </div>
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded bg-indigo-500"></span>
+                Context Recall
+              </span>
+              <span className="font-mono font-bold text-slate-200">84.1%</span>
+            </div>
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded bg-cyan-400"></span>
+                Answer Relevance
+              </span>
+              <span className="font-mono font-bold text-slate-200">87.5%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Visual Roadmap Guide */}
+      <div id="quickstart" className="relative z-10 glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 bg-slate-950/40 backdrop-blur-xl">
+        <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-indigo-400" />
+          Implementation Pipeline Guide
+        </h3>
+        <p className="text-xs text-slate-450 mt-1.5">Follow this structured flow to set up and run a full evaluation workflow.</p>
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step, idx) => (
+            <div key={idx} className="p-5 rounded-2xl bg-slate-950/50 border border-slate-900 relative group hover:bg-slate-950/80 transition-all hover:border-slate-800">
+              <div className="absolute top-4 right-4 text-[10px] font-mono font-bold text-slate-700 tracking-wider">
+                STAGE {step.num}
+              </div>
+              
+              <div className="h-7 w-7 rounded-lg bg-violet-650/10 border border-violet-500/25 flex items-center justify-center text-violet-400 text-xs font-black group-hover:bg-violet-500 group-hover:text-white transition-all">
                 {step.num}
               </div>
-              <h3 className="mt-4 font-bold text-white tracking-tight">{step.title}</h3>
-              <p className="mt-2 text-xs leading-5 text-slate-500 group-hover:text-slate-400 transition-colors">{step.desc}</p>
+
+              <h4 className="mt-4 text-xs sm:text-sm font-bold text-white tracking-tight">
+                {step.title}
+              </h4>
+              <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed">
+                {step.desc}
+              </p>
             </div>
           ))}
         </div>
