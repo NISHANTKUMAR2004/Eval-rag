@@ -23,27 +23,16 @@ setup_logging()
 
 
 def create_app() -> FastAPI:
-    # Run database migrations programmatically on startup (bypasses Render Free Tier Pre-Deploy limitation)
+    # Safely create all database tables programmatically on startup (bypasses Render Free Tier and Alembic file path issues)
     try:
-        import os
-        from alembic.config import Config
-        from alembic import command
+        from app.db.base import Base
+        from app.db.session import engine
         
-        logger.info("Triggering database migrations programmatically on startup...")
-        # Resolve alembic.ini path relative to app folder
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        alembic_ini_path = os.path.join(base_dir, "alembic.ini")
-        
-        if os.path.exists(alembic_ini_path):
-            alembic_cfg = Config(alembic_ini_path)
-            # Ensure it uses the resolved path for the script location too
-            alembic_cfg.set_main_option("script_location", os.path.join(base_dir, "alembic"))
-            command.upgrade(alembic_cfg, "head")
-            logger.info("Programmatic database migrations executed successfully!")
-        else:
-            logger.warning(f"alembic.ini not found at {alembic_ini_path}, skipping startup migrations.")
+        logger.info("Initializing database tables programmatically on startup...")
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created and verified successfully!")
     except Exception as e:
-        logger.error(f"Failed to run programmatic migrations on startup: {e}")
+        logger.error(f"Failed to initialize database tables on startup: {e}")
 
     app = FastAPI(
         title=settings.APP_NAME,
